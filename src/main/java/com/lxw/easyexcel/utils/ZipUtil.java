@@ -2,13 +2,13 @@ package com.lxw.easyexcel.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tools.zip.ZipEntry;
+import org.apache.tools.zip.ZipFile;
 import org.apache.tools.zip.ZipOutputStream;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.util.Enumeration;
 import java.util.List;
 
 import static org.springframework.util.StreamUtils.BUFFER_SIZE;

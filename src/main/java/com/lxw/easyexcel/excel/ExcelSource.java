@@ -4,7 +4,6 @@ import lombok.Data;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * @author liang.xiongwei
@@ -14,11 +13,11 @@ import java.util.function.Function;
  * @date 2021/5/23 15:48
  */
 @Data
-public class ExcelSource<T,R extends ExcelModelInterface> {
+public class ExcelSource<R extends ExcelModelInterface> {
 
+    /**模板路径*/
     private String templatePath;
 
-    private Function<T,R> sheetFunction;
-
-    private Map<String,List<T>> excelParam;
+    /**excel数据 one excel one key*/
+    private Map<String,List<R>> excelData;
 }

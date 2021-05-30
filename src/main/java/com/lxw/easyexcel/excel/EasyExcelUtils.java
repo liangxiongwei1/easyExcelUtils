@@ -4,12 +4,14 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelReader;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.read.metadata.ReadSheet;
+import com.alibaba.excel.util.StringUtils;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.alibaba.excel.write.metadata.fill.FillWrapper;
 import com.lxw.easyexcel.excel.listener.ExcelDataListener;
 import com.lxw.easyexcel.excel.template.write.TemplateExporter;
 import com.lxw.easyexcel.utils.FileUtils;
+import com.lxw.easyexcel.utils.ZipUtil;
 import lombok.Cleanup;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -24,11 +26,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author liang.xiongwei
@@ -155,7 +155,7 @@ public class EasyExcelUtils{
             excelWriter.finish();
             byte[] fileData = FileUtils.fileConvertToByteArray(temporaryFile);
             return new MockMultipartFile(excelName,excelName+".xls","xls",fileData);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("按模板导出多个sheet excel异常",e);
             return null;
         }finally {
@@ -163,6 +163,53 @@ public class EasyExcelUtils{
                 FileUtils.delFile(temporaryFile);
             }
         }
+    }
+
+
+    /**
+     * 导出多文件 多sheet excel
+     * @param excelSource
+     * @return
+     * @throws Exception
+     */
+    public static MultipartFile statementExport(ExcelSource excelSource) throws Exception{
+        if(excelSource == null || StringUtils.isEmpty(excelSource.getTemplatePath())){
+            log.warn("获取excel 导出源异常");
+            return null;
+        }
+        return exportToZIP(excelSource);
+    }
+
+
+    /**
+     * 导出excel 并打包
+     * @param excelSource
+     * @return
+     */
+    private static <R extends ExcelModelInterface> MultipartFile exportToZIP(ExcelSource<R> excelSource) throws Exception{
+        Map<String,List<MultipleSheet>> map = new HashMap<>(8);
+        excelSource.getExcelData().forEach((k,v)->{
+            List<EasyExcelUtils.MultipleSheet> multipleSheets = v.stream().map(p->p.buildSheet()).collect(Collectors.toList());
+            map.put(k,multipleSheets);
+        });
+
+        MultipartFile template = FileUtils.getResourcesFile(excelSource.getTemplatePath(),EasyExcelUtils.EXCEL_XLS);
+        List<MultipartFile> zipFiles = new ArrayList<>();
+        map.forEach((k,v)->{
+            MultipartFile multipartFile = writeTemplateExcel(v,template,k);
+            if(multipartFile != null){
+                zipFiles.add(multipartFile);
+            }
+        });
+
+        if(!CollectionUtils.isEmpty(zipFiles)){
+            if(zipFiles.size() == 1){
+                return new MockMultipartFile("file","file.xls", EasyExcelUtils.EXCEL_XLS,zipFiles.get(0).getBytes());
+            }else {
+                return ZipUtil.toZip(zipFiles);
+            }
+        }
+        return null;
     }
 
     /**
@@ -200,45 +247,5 @@ public class EasyExcelUtils{
         private List<?> data;
 
         private String tableName;
-    }
-
-    public static MultipartFile getResourcesFile(String filePath,String type){
-        ClassLoader classLoader = FileUtils.class.getClassLoader();
-        URL resource = classLoader.getResource(filePath);
-        String path = resource.getPath();
-        return new MockMultipartFile("file","file"+type,type,FileUtils.fileConvertToByteArray(path));
-    }
-
-    public static void main(String[] args) throws Exception{
-        MultipleSheet multipleSheet1 = new MultipleSheet();
-        List<TemplateExporter> list1 = new ArrayList<>();
-        TemplateExporter  templateExporter = new TemplateExporter();
-        templateExporter.setId(1);
-        templateExporter.setNameT("one");
-        TemplateExporter  templateExporter1 = new TemplateExporter();
-        templateExporter1.setId(2);
-        templateExporter1.setNameT("two");
-        list1.add(templateExporter);
-        list1.add(templateExporter1);
-        multipleSheet1.setSheetName("2021-5-20");
-        List<MultipleTable> listtemp1 = new ArrayList<>();
-        MultipleTable multipleTable = new MultipleTable();
-        multipleTable.setData(list1);
-        multipleTable.setTableName("data0");
-        MultipleTable multipleTable2 = new MultipleTable();
-        multipleTable2.setData(list1);
-        multipleTable2.setTableName("data1");
-        listtemp1.add(multipleTable);
-        listtemp1.add(multipleTable2);
-        multipleSheet1.setTableDataList(listtemp1);
-
-        List<MultipleSheet> multipleSheets = new ArrayList<>();
-        multipleSheets.add(multipleSheet1);
-//
-        writeSingleSheetExcel(list1,"2021-5-20",TemplateExporter.class);
-//        writeMultiSheetExcel(multipleSheets,TemplateExporter.class);
-//        System.out.println(System.getProperty("user.dir"));
-//        MultipartFile multipartFile = FileUtils.getResourcesFile("exceltempalte/0a8ada19-26d9-4aba-91dd-1e04be2fde61.xls","xls");
-//        writeTemplateExcel(multipleSheets,multipartFile,"test");
     }
 }
