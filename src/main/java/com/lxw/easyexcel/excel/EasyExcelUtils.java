@@ -45,9 +45,9 @@ public class EasyExcelUtils{
 
     /**
      * 读单个sheet excel
-     * @param file
-     * @param work
-     * @param myClass
+     * @param file excel文件
+     * @param work 读取后工作方法
+     * @param myClass 模型类
      * @param <T>
      * @throws Exception
      */
@@ -168,7 +168,7 @@ public class EasyExcelUtils{
 
     /**
      * 导出多文件 多sheet excel
-     * @param excelSource
+     * @param excelSource Excel需要导出源数据
      * @return
      * @throws Exception
      */
