@@ -1,5 +1,6 @@
 package com.lxw.easyexcel.utils;
 
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tools.zip.ZipEntry;
 import org.apache.tools.zip.ZipFile;
@@ -29,9 +30,9 @@ public class ZipUtil {
      */
     public static MultipartFile toZip(List<MultipartFile> srcFiles) throws RuntimeException {
         long start = System.currentTimeMillis();
-        ZipOutputStream zos = null;
+        @Cleanup ZipOutputStream zos = null;
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            @Cleanup ByteArrayOutputStream out = new ByteArrayOutputStream();
             zos = new ZipOutputStream(out);
             for (MultipartFile srcFile : srcFiles) {
                 byte[] buf = new byte[BUFFER_SIZE];
@@ -54,14 +55,6 @@ public class ZipUtil {
         } catch (Exception e) {
             log.error("ZipUtil toZip exception, ", e);
             throw new RuntimeException("zipFile error from ZipUtils", e);
-        } finally {
-            if (zos != null) {
-                try {
-                    zos.close();
-                } catch (IOException e) {
-                    log.error("ZipUtil toZip close exception, ", e);
-                }
-            }
         }
     }
 }
